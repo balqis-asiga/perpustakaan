@@ -21,6 +21,31 @@ password: admin123
 https://github.com/balqis-asiga/perpustakaan.git
 ______________________________________
 
+__________________
+✅ Cara Teman Kamu Clone Project
+
+Kalau repo kamu udah public:
+Teman kamu tinggal:
+
+Buka VS Code
+
+Klik:
+Clone Repository
+
+Paste link repo GitHub kamu, contoh:
+https://github.com/balqis-asiga/perpustakaan.git
+
+
+Pilih folder penyimpanan
+
+Setelah selesai clone, jalankan di XAMPP:
+
+Taruh folder ke:
+htdocs/
+
+Lalu buka:
+localhost/perpustakaan
+__________________
 ✅ STEP 3 — Teman Kamu Clone Projectnya
 
 Sekarang bagian temenmu.
