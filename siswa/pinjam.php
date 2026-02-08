@@ -18,13 +18,13 @@ $cekAktif = mysqli_query($koneksi,
 );
 $masihPinjam = mysqli_num_rows($cekAktif) > 0;
 
+
 /* ===============================
    PROSES PINJAM
    =============================== */
 if (isset($_GET['pinjam'])) {
     $id_buku = $_GET['pinjam'];
 
-    // jika masih pinjam buku lain
     if ($masihPinjam) {
         echo "<script>
             alert('Kamu masih punya buku yang belum dikembalikan!');
@@ -33,7 +33,6 @@ if (isset($_GET['pinjam'])) {
         exit;
     }
 
-    // cek stok buku
     $cek = mysqli_query($koneksi,
         "SELECT stok FROM buku WHERE id_buku='$id_buku'"
     );
@@ -41,7 +40,6 @@ if (isset($_GET['pinjam'])) {
 
     if ($buku && $buku['stok'] > 0) {
 
-        // insert transaksi + otomatis harus kembali 7 hari
         mysqli_query($koneksi,
             "INSERT INTO transaksi 
             (id_anggota, id_buku, tanggal_pinjam, tanggal_harus_kembali, status)
@@ -49,7 +47,6 @@ if (isset($_GET['pinjam'])) {
             ('$id_anggota','$id_buku', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 7 DAY), 'Dipinjam')"
         );
 
-        // kurangi stok buku
         mysqli_query($koneksi,
             "UPDATE buku SET stok = stok - 1 WHERE id_buku='$id_buku'"
         );
@@ -58,11 +55,31 @@ if (isset($_GET['pinjam'])) {
         exit;
     }
 }
+
+
+/* ===============================
+   FITUR SEARCH BUKU
+   =============================== */
+$cari = isset($_GET['cari']) ? $_GET['cari'] : "";
+
+if ($cari != "") {
+    $result = mysqli_query($koneksi,
+        "SELECT * FROM buku
+         WHERE judul LIKE '%$cari%'
+         OR pengarang LIKE '%$cari%'
+         OR penerbit LIKE '%$cari%'
+         ORDER BY judul ASC"
+    );
+} else {
+    $result = mysqli_query($koneksi,
+        "SELECT * FROM buku ORDER BY judul ASC"
+    );
+}
 ?>
 
 <?php include '../layout/header_siswa.php'; ?>
 
-<h4 class="fw-bold mb-3">Peminjaman Buku</h4>
+<h4 class="fw-bold mb-3">📚 Peminjaman Buku</h4>
 <a href="dashboard.php" class="btn btn-secondary btn-sm mb-3">← Kembali</a>
 
 <?php if ($masihPinjam) { ?>
@@ -72,8 +89,40 @@ if (isset($_GET['pinjam'])) {
     </div>
 <?php } ?>
 
+
+<!-- ===============================
+     FORM SEARCH
+     =============================== -->
+<form method="GET" class="d-flex mb-3">
+    <input type="text" name="cari"
+        class="form-control me-2"
+        placeholder="Cari buku (judul/pengarang/penerbit)..."
+        value="<?= $cari; ?>">
+
+    <button type="submit" class="btn btn-primary">
+        🔍 Cari
+    </button>
+
+    <?php if ($cari != "") { ?>
+        <a href="pinjam.php" class="btn btn-secondary ms-2">
+            Reset
+        </a>
+    <?php } ?>
+</form>
+
+
+<!-- ===============================
+     TABEL BUKU
+     =============================== -->
 <div class="card shadow-sm">
     <div class="card-body">
+
+        <?php if ($cari != "") { ?>
+            <div class="alert alert-info py-2">
+                Menampilkan hasil pencarian: <b><?= $cari; ?></b>
+            </div>
+        <?php } ?>
+
         <table class="table table-bordered table-hover align-middle">
             <thead class="table-success text-center">
                 <tr>
@@ -86,10 +135,19 @@ if (isset($_GET['pinjam'])) {
                     <th>Aksi</th>
                 </tr>
             </thead>
+
             <tbody>
             <?php
             $no = 1;
-            $result = mysqli_query($koneksi, "SELECT * FROM buku");
+
+            if (mysqli_num_rows($result) == 0) {
+                echo "<tr>
+                        <td colspan='7' class='text-center text-muted'>
+                            Buku tidak ditemukan.
+                        </td>
+                      </tr>";
+            }
+
             while ($row = mysqli_fetch_assoc($result)) {
             ?>
                 <tr>
@@ -99,6 +157,7 @@ if (isset($_GET['pinjam'])) {
                     <td><?= $row['penerbit']; ?></td>
                     <td class="text-center"><?= $row['tahun_terbit']; ?></td>
                     <td class="text-center"><?= $row['stok']; ?></td>
+
                     <td class="text-center">
                         <?php if ($row['stok'] > 0 && !$masihPinjam) { ?>
                             <a href="?pinjam=<?= $row['id_buku']; ?>"
